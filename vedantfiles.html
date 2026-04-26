@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Vedant Files</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0b09;
+    --paper: #f5f0e8;
+    --ink: #1a1612;
+    --red: #c0392b;
+    --red-dark: #922b21;
+    --yellow: #f0c040;
+    --muted: #6b6560;
+    --border: #2a2520;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--paper);
+    font-family: 'DM Mono', monospace;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* SCROLL PROGRESS */
+  .progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: var(--red);
+    width: 0%;
+    z-index: 1000;
+    transition: width 0.1s linear;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 48px;
+    background: rgba(12,11,9,0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-style: italic;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  .nav-stamp {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--red);
+    border: 1px solid var(--red);
+    padding: 4px 10px;
+    opacity: 0.8;
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 120px 48px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg-text {
+    position: absolute;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(120px, 20vw, 280px);
+    font-weight: 900;
+    color: rgba(255,255,255,0.015);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+    pointer-events: none;
+    letter-spacing: -4px;
+    user-select: none;
+  }
+
+  .hero-eyebrow {
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 24px;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp 0.8s ease 0.2s forwards;
+  }
+
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(64px, 10vw, 140px);
+    font-weight: 900;
+    line-height: 0.92;
+    letter-spacing: -2px;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeUp 0.9s ease 0.4s forwards;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--red);
+  }
+
+  .hero-divider {
+    width: 80px;
+    height: 1px;
+    background: var(--muted);
+    margin: 36px 0;
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: left;
+    animation: expandLine 0.8s ease 0.8s forwards;
+  }
+
+  .hero-sub {
+    font-size: 12px;
+    color: var(--muted);
+    max-width: 440px;
+    line-height: 2;
+    letter-spacing: 0.3px;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp 0.8s ease 1s forwards;
+  }
+
+  .hero-sub span {
+    color: var(--paper);
+  }
+
+  .hero-scroll-hint {
+    position: absolute;
+    bottom: 40px;
+    left: 48px;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 1.4s forwards;
+  }
+
+  .hero-scroll-hint::before {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: var(--muted);
+  }
+
+  /* DOSSIER LINE */
+  .dossier-line {
+    padding: 16px 48px;
+    background: var(--red-dark);
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    overflow: hidden;
+  }
+
+  .dossier-ticker {
+    display: flex;
+    gap: 48px;
+    white-space: nowrap;
+    animation: ticker 20s linear infinite;
+    flex-shrink: 0;
+  }
+
+  .dossier-ticker span {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--paper);
+    opacity: 0.9;
+    flex-shrink: 0;
+  }
+
+  .dossier-ticker .sep {
+    opacity: 0.4;
+  }
+
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* SECTIONS */
+  section {
+    padding: 100px 48px;
+    position: relative;
+  }
+
+  .section-number {
+    font-size: 9px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 12px;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(36px, 5vw, 64px);
+    font-weight: 700;
+    line-height: 1.05;
+    margin-bottom: 16px;
+    letter-spacing: -1px;
+  }
+
+  .section-title em { font-style: italic; color: var(--red); }
+
+  .section-rule {
+    width: 60px;
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 48px;
+  }
+
+  /* CHARGES GRID */
+  .charges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .charge-card {
+    background: var(--bg);
+    padding: 32px 28px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s ease;
+  }
+
+  .charge-card:hover {
+    background: #111009;
+  }
+
+  .charge-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 0; height: 100%;
+    background: var(--red);
+    opacity: 0.06;
+    transition: width 0.4s ease;
+  }
+
+  .charge-card:hover::before {
+    width: 100%;
+  }
+
+  .charge-num {
+    font-size: 48px;
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    color: var(--border);
+    line-height: 1;
+    margin-bottom: 16px;
+    transition: color 0.3s;
+  }
+
+  .charge-card:hover .charge-num {
+    color: var(--red-dark);
+  }
+
+  .charge-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 10px;
+  }
+
+  .charge-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    line-height: 1.2;
+  }
+
+  .charge-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.9;
+  }
+
+  /* EVIDENCE SECTION */
+  .evidence-section {
+    background: #0f0e0c;
+  }
+
+  .evidence-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-top: 48px;
+  }
+
+  .evidence-item {
+    border: 1px solid var(--border);
+    padding: 28px;
+    position: relative;
+  }
+
+  .evidence-item::after {
+    content: 'EXHIBIT ' attr(data-exhibit);
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 8px;
+    letter-spacing: 3px;
+    color: var(--red);
+    opacity: 0.6;
+  }
+
+  .evidence-quote {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-style: italic;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    color: var(--paper);
+  }
+
+  .evidence-meta {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* VERDICT */
+  .verdict-section {
+    text-align: center;
+    padding: 120px 48px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .verdict-bg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(100px, 18vw, 240px);
+    font-weight: 900;
+    font-style: italic;
+    color: rgba(192,57,43,0.04);
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: -4px;
+  }
+
+  .verdict-stamp {
+    display: inline-block;
+    border: 4px solid var(--red);
+    color: var(--red);
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(48px, 8vw, 96px);
+    font-weight: 900;
+    letter-spacing: 8px;
+    padding: 16px 40px;
+    transform: rotate(-3deg);
+    opacity: 0;
+    transition: opacity 0.6s, transform 0.6s;
+    margin-bottom: 40px;
+    display: inline-block;
+  }
+
+  .verdict-stamp.visible {
+    opacity: 1;
+  }
+
+  .verdict-text {
+    font-size: 13px;
+    color: var(--muted);
+    max-width: 500px;
+    margin: 0 auto;
+    line-height: 2;
+  }
+
+  /* TIMELINE */
+  .timeline {
+    position: relative;
+    padding-left: 48px;
+    margin-top: 48px;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: var(--border);
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-bottom: 48px;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .timeline-item.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -52px;
+    top: 6px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 12px var(--red);
+  }
+
+  .timeline-date {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 8px;
+  }
+
+  .timeline-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .timeline-body {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.9;
+    max-width: 520px;
+  }
+
+  /* PARALLAX DIVIDER */
+  .parallax-divider {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .parallax-inner {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(32px, 5vw, 64px);
+    font-style: italic;
+    color: rgba(255,255,255,0.06);
+    white-space: nowrap;
+    will-change: transform;
+    letter-spacing: 2px;
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 48px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .footer-left {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .footer-right {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--border);
+  }
+
+  /* SCROLL REVEAL */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .reveal-left {
+    opacity: 0;
+    transform: translateX(-40px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal-left.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes expandLine {
+    to { opacity: 1; transform: scaleX(1); }
+  }
+
+  /* REDACTED */
+  .redacted {
+    background: var(--paper);
+    color: var(--paper);
+    padding: 0 4px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .redacted:hover, .redacted.revealed {
+    background: var(--red-dark);
+    color: var(--paper);
+  }
+
+  /* GLITCH */
+  .glitch {
+    position: relative;
+    display: inline-block;
+  }
+
+  .glitch::before, .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0; left: 0;
+    opacity: 0;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    font-style: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+  }
+
+  .glitch:hover::before {
+    opacity: 0.8;
+    color: var(--red);
+    animation: glitch1 0.3s steps(2) infinite;
+    clip-path: polygon(0 30%, 100% 30%, 100% 50%, 0 50%);
+  }
+
+  .glitch:hover::after {
+    opacity: 0.6;
+    color: var(--yellow);
+    animation: glitch2 0.3s steps(2) infinite;
+    clip-path: polygon(0 60%, 100% 60%, 100% 75%, 0 75%);
+  }
+
+  @keyframes glitch1 {
+    0% { transform: translateX(-3px); }
+    100% { transform: translateX(3px); }
+  }
+
+  @keyframes glitch2 {
+    0% { transform: translateX(3px); }
+    100% { transform: translateX(-3px); }
+  }
+
+  /* CASE FILE HEADER */
+  .case-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 32px;
+    align-items: start;
+    margin-bottom: 64px;
+  }
+
+  .case-file-box {
+    border: 1px solid var(--border);
+    padding: 20px 24px;
+    font-size: 10px;
+    line-height: 2.2;
+    color: var(--muted);
+    min-width: 200px;
+  }
+
+  .case-file-box .field {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin-bottom: 6px;
+  }
+
+  .case-file-box .field:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .case-file-box .field-val {
+    color: var(--paper);
+    text-align: right;
+  }
+
+  /* MOBILE */
+  @media (max-width: 700px) {
+    nav { padding: 16px 24px; }
+    .hero { padding: 100px 24px 60px; }
+    section { padding: 64px 24px; }
+    .evidence-grid { grid-template-columns: 1fr; }
+    .case-header { grid-template-columns: 1fr; }
+    footer { padding: 32px 24px; }
+    .verdict-section { padding: 80px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<nav>
+  <div class="nav-logo">The Vedant Files</div>
+  <div class="nav-stamp">Classified</div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg-text">VEDANT</div>
+  <div class="hero-eyebrow">Case File No. 001 — The Exposé</div>
+  <h1 class="hero-title glitch" data-text="THE VEDANT FILES">THE<br><em>VEDANT</em><br>FILES</h1>
+  <div class="hero-divider"></div>
+  <p class="hero-sub">
+    A <span>documented record</span> of events, patterns, and conduct.<br>
+    This file exists for one reason — <span>accountability.</span><br>
+    What follows is not a personal attack.<br>
+    It is simply <span>the truth.</span>
+  </p>
+  <div class="hero-scroll-hint">Scroll to begin</div>
+</div>
+
+<!-- TICKER -->
+<div class="dossier-line">
+  <div class="dossier-ticker">
+    <span>Exhibit A</span><span class="sep">///</span>
+    <span>Pattern of Behaviour</span><span class="sep">///</span>
+    <span>Multiple Witnesses</span><span class="sep">///</span>
+    <span>Documented Evidence</span><span class="sep">///</span>
+    <span>Case Closed</span><span class="sep">///</span>
+    <span>Exhibit A</span><span class="sep">///</span>
+    <span>Pattern of Behaviour</span><span class="sep">///</span>
+    <span>Multiple Witnesses</span><span class="sep">///</span>
+    <span>Documented Evidence</span><span class="sep">///</span>
+    <span>Case Closed</span><span class="sep">///</span>
+  </div>
+</div>
+
+<!-- OVERVIEW -->
+<section>
+  <div class="case-header reveal">
+    <div>
+      <div class="section-number">Section 01 — Overview</div>
+      <h2 class="section-title">The <em>Subject</em><br>in Question</h2>
+      <div class="section-rule"></div>
+      <p style="font-size:12px; color:var(--muted); line-height:2; max-width:480px;">
+        Vedant is not someone who made one bad decision. This is a pattern — consistent, calculated, and well-documented. 
+        The following sections detail specific charges supported by evidence gathered over an extended period by multiple individuals.
+        <br><br>
+        Click <span class="redacted" onclick="this.classList.toggle('revealed')">his real name</span> to reveal what we actually call him.
+      </p>
+    </div>
+    <div class="case-file-box reveal">
+      <div class="field">
+        <span>File No.</span>
+        <span class="field-val">VDF-001</span>
+      </div>
+      <div class="field">
+        <span>Status</span>
+        <span class="field-val" style="color:var(--red)">Open</span>
+      </div>
+      <div class="field">
+        <span>Witnesses</span>
+        <span class="field-val">Multiple</span>
+      </div>
+      <div class="field">
+        <span>Exhibits</span>
+        <span class="field-val">A–F</span>
+      </div>
+      <div class="field">
+        <span>Verdict</span>
+        <span class="field-val" style="color:var(--red)">GUILTY</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PARALLAX -->
+<div class="parallax-divider">
+  <div class="parallax-inner" id="parallax1">"Never contributed. Always demanded."</div>
+</div>
+
+<!-- CHARGES -->
+<section>
+  <div class="reveal">
+    <div class="section-number">Section 02 — Charges</div>
+    <h2 class="section-title">The <em>Offences</em></h2>
+    <div class="section-rule"></div>
+  </div>
+  <div class="charges-grid reveal">
+    <div class="charge-card">
+      <div class="charge-num">01</div>
+      <div class="charge-label">Financial Misconduct</div>
+      <div class="charge-title">The Freeloading Chronicles</div>
+      <div class="charge-desc">Never contributed a single rupee but always had his hand out. Would beg, manipulate, and guilt-trip for money — then vanish when the bill came. Borrowed from friends citing fake emergencies, only to spend it on himself.</div>
+    </div>
+    <div class="charge-card">
+      <div class="charge-num">02</div>
+      <div class="charge-label">Deception</div>
+      <div class="charge-title">Professional Liar, Amateur Actor</div>
+      <div class="charge-desc">Lied about a friend carrying a knife, making him look dangerous. Lied about his dog being sick to beg money — then bought himself a vape with it. Claimed to have things he didn't. A serial fabricator with zero shame.</div>
+    </div>
+    <div class="charge-card">
+      <div class="charge-num">03</div>
+      <div class="charge-label">Social Manipulation</div>
+      <div class="charge-title">Master of Backstabbing</div>
+      <div class="charge-desc">Back-bitched about every single friend to every other friend. Played people against each other so carefully that nobody would find out. Spoiler: everyone found out. His social web collapsed under the weight of his own lies.</div>
+    </div>
+    <div class="charge-card">
+      <div class="charge-num">04</div>
+      <div class="charge-label">Transactional Friendship</div>
+      <div class="charge-title">Friends? More Like Utilities.</div>
+      <div class="charge-desc">Maintained friendships purely for personal gain — legal cover, muscle in a fight, free food, a ride, money, or something to borrow. The moment you had nothing to offer, you didn't exist to him.</div>
+    </div>
+    <div class="charge-card">
+      <div class="charge-num">05</div>
+      <div class="charge-label">Conduct</div>
+      <div class="charge-title">Made People Uncomfortable</div>
+      <div class="charge-desc">Texted girls — younger and older — with uncomfortable and vulgar questions. Treated women as objects rather than people. Multiple people can confirm this pattern of disrespectful behaviour.</div>
+    </div>
+    <div class="charge-card">
+      <div class="charge-num">06</div>
+      <div class="charge-label">General Behaviour</div>
+      <div class="charge-title">The Crying Gunda</div>
+      <div class="charge-desc">Would whine and cry when friends didn't share things he never contributed to buying. Then in the same breath, lied about carrying weapons to seem dangerous. Pick a character, Vedant.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PARALLAX 2 -->
+<div class="parallax-divider">
+  <div class="parallax-inner" id="parallax2">"Borrowed money for a sick dog. The vape hits different."</div>
+</div>
+
+<!-- TIMELINE -->
+<section class="evidence-section">
+  <div class="reveal">
+    <div class="section-number">Section 03 — Timeline</div>
+    <h2 class="section-title">How It <em>Unravelled</em></h2>
+    <div class="section-rule"></div>
+  </div>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-date">Phase One</div>
+      <div class="timeline-title">The Honeymoon Period</div>
+      <div class="timeline-body">Seemed like a normal friend. Showed up, hung out, participated. Nobody suspected anything. This is what they call the recruitment phase — where the con artist establishes trust.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-date">Phase Two</div>
+      <div class="timeline-title">The Patterns Emerge</div>
+      <div class="timeline-body">Slowly, requests for money started. Never contributing to shared expenses but always demanding access. The backstabbing began quietly — small comments here, a rumour there. Nobody connected the dots yet.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-date">Phase Three</div>
+      <div class="timeline-title">The Lies Stack Up</div>
+      <div class="timeline-body">The knife lie. The dog lie. The vape. The fake emergencies. The manipulated group dynamics. Each lie required a bigger lie to cover it. The structure began to crack.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-date">Phase Four</div>
+      <div class="timeline-title">Everyone Compares Notes</div>
+      <div class="timeline-body">One conversation. "Wait, he told you that too?" The entire carefully constructed web came apart in a single afternoon. Every friend had a piece of the puzzle. When assembled, the picture was not flattering.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-date">Present</div>
+      <div class="timeline-title">This Website Exists</div>
+      <div class="timeline-body">Which means things are not ending well for him. A file has been opened. The record is being set straight. Consider this the official documentation of what everyone already knows.</div>
+    </div>
+  </div>
+</section>
+
+<!-- EVIDENCE -->
+<section>
+  <div class="reveal">
+    <div class="section-number">Section 04 — Evidence</div>
+    <h2 class="section-title">Selected <em>Exhibits</em></h2>
+    <div class="section-rule"></div>
+  </div>
+  <div class="evidence-grid">
+    <div class="evidence-item reveal" data-exhibit="A">
+      <div class="evidence-quote">"Online I will give you soon. Don't ask any of your friends. Ask someone who should give your money back."</div>
+      <div class="evidence-meta">DM Logs — Money Requests</div>
+    </div>
+    <div class="evidence-item reveal" data-exhibit="B">
+      <div class="evidence-quote">"Arrange please. Brooo I want till tmrr. It's okay if you give me cash also."</div>
+      <div class="evidence-meta">DM Logs — Persistent Begging</div>
+    </div>
+    <div class="evidence-item reveal" data-exhibit="C">
+      <div class="evidence-quote">Told friends his dog was critically ill and needed emergency money. Bought a vape within 48 hours. The dog was fine.</div>
+      <div class="evidence-meta">Witness Accounts — The Dog Incident</div>
+    </div>
+    <div class="evidence-item reveal" data-exhibit="D">
+      <div class="evidence-quote">Told Person A that Person B said X. Told Person B that Person A said Y. Neither said anything. Classic triangulation.</div>
+      <div class="evidence-meta">Pattern Analysis — Manipulation Tactics</div>
+    </div>
+  </div>
+</section>
+
+<!-- PARALLAX 3 -->
+<div class="parallax-divider">
+  <div class="parallax-inner" id="parallax3">"Not ending well for him." — The Gang, collectively.</div>
+</div>
+
+<!-- VERDICT -->
+<div class="verdict-section">
+  <div class="verdict-bg">GUILTY</div>
+  <div class="verdict-stamp" id="verdictStamp">GUILTY</div>
+  <h2 class="section-title reveal" style="margin-bottom:24px;">The <em>Verdict</em></h2>
+  <p class="verdict-text reveal">
+    After reviewing the evidence, consulting multiple witnesses, and cross-referencing documented incidents — the verdict is unanimous. The file is complete. The record is set.
+    <br><br>
+    <span style="color:var(--red); font-family:'Playfair Display',serif; font-style:italic; font-size:15px;">The truth has a way of surfacing.</span>
+  </p>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">The Vedant Files — Est. 2025</div>
+  <div class="footer-right">Case No. VDF-001 &nbsp;///&nbsp; Status: Open &nbsp;///&nbsp; Verdict: Guilty</div>
+</footer>
+
+<script>
+  // SCROLL PROGRESS
+  const progressBar = document.getElementById('progressBar');
+  window.addEventListener('scroll', () => {
+    const scrolled = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+    progressBar.style.width = scrolled + '%';
+  });
+
+  // SCROLL REVEAL
+  const revealEls = document.querySelectorAll('.reveal, .reveal-left, .timeline-item');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, entry.target.dataset.delay || 0);
+      }
+    });
+  }, { threshold: 0.15 });
+
+  revealEls.forEach((el, i) => {
+    el.dataset.delay = (i % 4) * 80;
+    observer.observe(el);
+  });
+
+  // VERDICT STAMP
+  const verdictStamp = document.getElementById('verdictStamp');
+  const verdictObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        verdictStamp.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.5 });
+  verdictObserver.observe(verdictStamp);
+
+  // PARALLAX
+  function parallax() {
+    const scrollY = window.scrollY;
+    const p1 = document.getElementById('parallax1');
+    const p2 = document.getElementById('parallax2');
+    const p3 = document.getElementById('parallax3');
+
+    if (p1) {
+      const rect = p1.closest('.parallax-divider').getBoundingClientRect();
+      p1.style.transform = `translateX(${rect.top * 0.15}px)`;
+    }
+    if (p2) {
+      const rect = p2.closest('.parallax-divider').getBoundingClientRect();
+      p2.style.transform = `translateX(${-rect.top * 0.12}px)`;
+    }
+    if (p3) {
+      const rect = p3.closest('.parallax-divider').getBoundingClientRect();
+      p3.style.transform = `translateX(${rect.top * 0.1}px)`;
+    }
+  }
+
+  window.addEventListener('scroll', parallax, { passive: true });
+
+  // STAGGER CHARGE CARDS
+  const cards = document.querySelectorAll('.charge-card');
+  const cardObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const idx = Array.from(cards).indexOf(entry.target);
+        setTimeout(() => {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }, idx * 100);
+        cardObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  cards.forEach(card => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(30px)';
+    card.style.transition = 'opacity 0.6s ease, transform 0.6s ease, background 0.3s ease';
+    cardObserver.observe(card);
+  });
+</script>
+</body>
+</html>
